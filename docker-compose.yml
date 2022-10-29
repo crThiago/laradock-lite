@@ -8,8 +8,6 @@ networks:
 volumes:
   mysql:
     driver: ${VOLUMES_DRIVER}
-  percona:
-    driver: ${VOLUMES_DRIVER}
   mssql:
     driver: ${VOLUMES_DRIVER}
   postgres:
@@ -23,8 +21,6 @@ volumes:
   mariadb:
     driver: ${VOLUMES_DRIVER}
   mongo:
-    driver: ${VOLUMES_DRIVER}
-  minio:
     driver: ${VOLUMES_DRIVER}
   rethinkdb:
     driver: ${VOLUMES_DRIVER}
@@ -414,22 +410,6 @@ services:
         - frontend
         - backend
 
-### Minio ################################################
-    minio:
-      build: ./minio
-      volumes:
-        - ${DATA_PATH_HOST}/minio/data:/export
-        - ${DATA_PATH_HOST}/minio/config:/root/.minio
-      ports:
-        - "${MINIO_PORT}:9000"
-        - "${MINIO_CONSOLE_PORT}:9001"
-      environment:
-        - MINIO_ROOT_USER=${MINIO_ROOT_USER}
-        - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
-      networks:
-        - frontend
-        - backend
-
 ### MySQL ################################################
     mysql:
       build:
@@ -447,23 +427,6 @@ services:
         - ${MYSQL_ENTRYPOINT_INITDB}:/docker-entrypoint-initdb.d
       ports:
         - "${MYSQL_PORT}:3306"
-      networks:
-        - backend
-
-### Percona ################################################
-    percona:
-      build:
-        context: ./percona
-      environment:
-        - MYSQL_DATABASE=${PERCONA_DATABASE}
-        - MYSQL_USER=${PERCONA_USER}
-        - MYSQL_PASSWORD=${PERCONA_PASSWORD}
-        - MYSQL_ROOT_PASSWORD=${PERCONA_ROOT_PASSWORD}
-      volumes:
-        - ${DATA_PATH_HOST}/percona:/var/lib/mysql
-        - ${PERCONA_ENTRYPOINT_INITDB}:/docker-entrypoint-initdb.d
-      ports:
-        - "${PERCONA_PORT}:3306"
       networks:
         - backend
 
