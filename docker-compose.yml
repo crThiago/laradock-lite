@@ -16,8 +16,6 @@ volumes:
     driver: ${VOLUMES_DRIVER}
   redis:
     driver: ${VOLUMES_DRIVER}
-  neo4j:
-    driver: ${VOLUMES_DRIVER}
   mariadb:
     driver: ${VOLUMES_DRIVER}
   mongo:
@@ -521,19 +519,6 @@ services:
       networks:
         - backend
 
-### Neo4j ################################################
-    neo4j:
-      ports:
-          - '7401:7474'
-          - '7402:7687'
-      environment:
-          - NEO4J_AUTH=none
-      volumes:
-          - ${DATA_PATH_HOST}/neo4j/data:/data
-          - ${DATA_PATH_HOST}/neo4j/logs:/logs
-      image: 'neo4j:latest'
-      networks:
-        - backend
 ### Nats ################################################
     nats:
       build: ./nats
