@@ -294,23 +294,6 @@ RUN if [ ${INSTALL_XDEBUG} = false -a ${INSTALL_BLACKFIRE} = true ]; then \
 ;fi
 
 ###########################################################################
-# PHP REDIS EXTENSION
-###########################################################################
-
-ARG INSTALL_PHPREDIS=false
-
-RUN if [ ${INSTALL_PHPREDIS} = true ]; then \
-    # Install Php Redis Extension
-    if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
-      pecl install -o -f redis-4.3.0; \
-    else \
-      pecl install -o -f redis; \
-    fi \
-    && rm -rf /tmp/pear \
-    && docker-php-ext-enable redis \
-;fi
-
-###########################################################################
 # Swoole EXTENSION
 ###########################################################################
 
@@ -1081,31 +1064,6 @@ RUN if [ ${INSTALL_PHPDECIMAL} = true ]; then \
 ;fi
 
 ###########################################################################
-# zookeeper
-###########################################################################
-ARG INSTALL_ZOOKEEPER=false
-
-RUN set -eux; \
-    if [ ${INSTALL_ZOOKEEPER} = true ]; then \
-    apt install -yqq libzookeeper-mt-dev; \
-    if [ $(php -r "echo PHP_MAJOR_VERSION;") = "8" ]; then \
-      curl -L -o /tmp/php-zookeeper.tar.gz https://github.com/php-zookeeper/php-zookeeper/archive/master.tar.gz; \
-      mkdir -p /tmp/php-zookeeper; \
-      tar -C /tmp/php-zookeeper -zxvf /tmp/php-zookeeper.tar.gz --strip 1; \
-      cd /tmp/php-zookeeper; \
-      phpize && ./configure && make && make install;\
-    else \
-      if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
-        pecl install zookeeper-0.5.0; \
-      else \
-        pecl install zookeeper-0.7.2; \
-      fi; \
-    fi; \
-    docker-php-ext-enable zookeeper; \
-    php -m | grep -q 'zookeeper'; \
-    fi
-
-###########################################################################
 # New Relic for PHP:
 ###########################################################################
 ARG NEW_RELIC=${NEW_RELIC}
@@ -1126,32 +1084,6 @@ RUN if [ ${NEW_RELIC} = true ]; then \
   /usr/local/etc/php/conf.d/newrelic.ini \
 ;fi
 
-###########################################################################
-# PHP SSDB:
-###########################################################################
-
-USER root
-
-ARG INSTALL_SSDB=false
-
-RUN set -xe; \
-    if [ ${INSTALL_SSDB} = true ] && [ $(php -r "echo PHP_MAJOR_VERSION;") != "8" ]; then \
-    apt-get -y install sudo wget && \
-    if [ $(php -r "echo PHP_MAJOR_VERSION;") = "7" ]; then \
-      curl -L -o /tmp/ssdb-client-php.tar.gz https://github.com/jonnywang/phpssdb/archive/php7.tar.gz; \
-    else \
-      curl -L -o /tmp/ssdb-client-php.tar.gz https://github.com/jonnywang/phpssdb/archive/master.tar.gz; \
-    fi \
-    && mkdir -p /tmp/ssdb-client-php \
-    && tar -C /tmp/ssdb-client-php -zxvf /tmp/ssdb-client-php.tar.gz --strip 1 \
-    && cd /tmp/ssdb-client-php \
-    && phpize \
-    && ./configure \
-    && make \
-    && make install \
-    && rm /tmp/ssdb-client-php.tar.gz \
-    && docker-php-ext-enable ssdb \
-;fi
 ###########################################################################
 # Downgrade Openssl:
 ###########################################################################

@@ -511,16 +511,6 @@ RUN if [ ${INSTALL_GEARMAN} = true ]; then \
 ;fi
 
 ###########################################################################
-# PHP REDIS EXTENSION
-###########################################################################
-
-ARG INSTALL_PHPREDIS=false
-
-RUN if [ ${INSTALL_PHPREDIS} = true ]; then \
-    apt-get install -yqq php${LARADOCK_PHP_VERSION}-redis \
-;fi
-
-###########################################################################
 # Swoole EXTENSION
 ###########################################################################
 
@@ -1564,59 +1554,6 @@ RUN if [ ${INSTALL_PHPDECIMAL} = true ]; then \
       && ln -s /etc/php/${LARADOCK_PHP_VERSION}/mods-available/decimal.ini /etc/php/${LARADOCK_PHP_VERSION}/cli/conf.d/30-decimal.ini \
       && php -m | grep -q 'decimal' \
     ;fi \
-;fi
-
-###########################################################################
-# zookeeper
-###########################################################################
-ARG INSTALL_ZOOKEEPER=false
-
-RUN set -eux; \
-    if [ ${INSTALL_ZOOKEEPER} = true ]; then \
-    apt install -yqq libzookeeper-mt-dev; \
-    if [ $(php -r "echo PHP_MAJOR_VERSION;") = "8" ]; then \
-      curl -L -o /tmp/php-zookeeper.tar.gz https://github.com/php-zookeeper/php-zookeeper/archive/master.tar.gz; \
-      mkdir -p /tmp/php-zookeeper; \
-      tar -C /tmp/php-zookeeper -zxvf /tmp/php-zookeeper.tar.gz --strip 1; \
-      cd /tmp/php-zookeeper; \
-      phpize && ./configure && make && make install;\
-    else \
-      if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
-        pecl install zookeeper-0.5.0; \
-      else \
-        pecl install zookeeper-0.7.2; \
-      fi; \
-    fi; \
-    echo "extension=zookeeper.so" >> /etc/php/${LARADOCK_PHP_VERSION}/mods-available/zookeeper.ini; \
-    ln -s /etc/php/${LARADOCK_PHP_VERSION}/mods-available/zookeeper.ini /etc/php/${LARADOCK_PHP_VERSION}/cli/conf.d/30-zookeeper.ini; \
-    php -m | grep -q 'zookeeper'; \
-    fi
-
-###########################################################################
-# PHP SSDB:
-###########################################################################
-
-USER root
-
-ARG INSTALL_SSDB=false
-
-RUN set -xe; \
-    if [ ${INSTALL_SSDB} = true ] && [ $(php -r "echo PHP_MAJOR_VERSION;") != "8" ]; then \
-    apt-get -y install sudo wget && \
-    if [ $(php -r "echo PHP_MAJOR_VERSION;") = "7" ]; then \
-      curl -L -o /tmp/ssdb-client-php.tar.gz https://github.com/jonnywang/phpssdb/archive/php7.tar.gz; \
-    else \
-      curl -L -o /tmp/ssdb-client-php.tar.gz https://github.com/jonnywang/phpssdb/archive/master.tar.gz; \
-    fi \
-    && mkdir -p /tmp/ssdb-client-php \
-    && tar -C /tmp/ssdb-client-php -zxvf /tmp/ssdb-client-php.tar.gz --strip 1 \
-    && cd /tmp/ssdb-client-php \
-    && phpize \
-    && ./configure \
-    && make \
-    && make install \
-    && rm /tmp/ssdb-client-php.tar.gz \
-    && docker-php-ext-enable ssdb \
 ;fi
 
 #####################################
