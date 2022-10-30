@@ -178,40 +178,6 @@ RUN if [ ${INSTALL_PGSQL} = true ]; then \
 ;fi
 
 ###########################################################################
-# pgsql client
-###########################################################################
-
-ARG INSTALL_PG_CLIENT=false
-ARG INSTALL_POSTGIS=false
-
-RUN if [ ${INSTALL_PG_CLIENT} = true ]; then \
-    apt-get install -yqq gnupg \
-    && . /etc/os-release \
-    && echo "deb http://apt.postgresql.org/pub/repos/apt $VERSION_CODENAME-pgdg main" > /etc/apt/sources.list.d/pgdg.list \
-    && curl -sL https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - \
-    && apt-get update -yqq \
-    && apt-get install -yqq postgresql-client-12 postgis; \
-    if [ ${INSTALL_POSTGIS} = true ]; then \
-      apt-get install -yqq postgis; \
-    fi \
-    && apt-get purge -yqq gnupg \
-;fi
-
-###########################################################################
-# Blackfire:
-###########################################################################
-
-ARG INSTALL_BLACKFIRE=false
-
-RUN if [ ${INSTALL_XDEBUG} = false -a ${INSTALL_BLACKFIRE} = true ]; then \
-    version=$(php -r "echo PHP_MAJOR_VERSION.PHP_MINOR_VERSION;") \
-    && curl -A "Docker" -o /tmp/blackfire-probe.tar.gz -D - -L -s https://blackfire.io/api/v1/releases/probe/php/linux/amd64/$version \
-    && tar zxpf /tmp/blackfire-probe.tar.gz -C /tmp \
-    && mv /tmp/blackfire-*.so $(php -r "echo ini_get('extension_dir');")/blackfire.so \
-    && printf "extension=blackfire.so\nblackfire.agent_socket=tcp://blackfire:8707\n" > $PHP_INI_DIR/conf.d/blackfire.ini \
-;fi
-
-###########################################################################
 # Swoole EXTENSION
 ###########################################################################
 

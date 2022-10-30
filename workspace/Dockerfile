@@ -1044,17 +1044,6 @@ RUN if [ ${INSTALL_TERRAFORM} = true ]; then \
 ;fi
 
 ###########################################################################
-# Memcached Dependecies:
-###########################################################################
-
-ARG INSTALL_MEMCACHED=false
-
-RUN if [ ${INSTALL_MEMCACHED} = true ]; then \
-  apt-get -y install php${LARADOCK_PHP_VERSION}-igbinary \
-  && apt-get -y install php${LARADOCK_PHP_VERSION}-memcached \
-;fi
-
-###########################################################################
 # pgsql client
 ###########################################################################
 

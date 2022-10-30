@@ -405,24 +405,6 @@ RUN if [ ${INSTALL_XMLRPC} = true ]; then \
   fi
 
 ###########################################################################
-# PHP Memcached:
-###########################################################################
-
-ARG INSTALL_MEMCACHED=false
-
-RUN if [ ${INSTALL_MEMCACHED} = true ]; then \
-  apk --update add libmemcached-dev; \
-  # Install the php memcached extension
-  if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
-  pecl install memcached-2.2.0; \
-  else \
-  pecl install memcached; \
-  fi; \
-  docker-php-ext-enable memcached; \
-  php -m | grep -r 'memcached'; \
-  fi
-
-###########################################################################
 # SQL SERVER:
 ###########################################################################
 
