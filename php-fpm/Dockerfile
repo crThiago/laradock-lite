@@ -23,16 +23,6 @@ ARG LARADOCK_PHP_VERSION
 # Set Environment Variables
 ENV DEBIAN_FRONTEND noninteractive
 
-# If you're in China, or you need to change sources, will be set CHANGE_SOURCE to true in .env.
-
-ARG CHANGE_SOURCE=false
-RUN if [ ${CHANGE_SOURCE} = true ]; then \
-    # Change application source from deb.debian.org to aliyun source
-    sed -i 's/deb.debian.org/mirrors.tuna.tsinghua.edu.cn/' /etc/apt/sources.list && \
-    sed -i 's/security.debian.org/mirrors.tuna.tsinghua.edu.cn/' /etc/apt/sources.list && \
-    sed -i 's/security-cdn.debian.org/mirrors.tuna.tsinghua.edu.cn/' /etc/apt/sources.list \
-;fi
-
 # always run apt update when start and after add new source list, then clean up at end.
 RUN set -xe; \
     apt-get update -yqq && \
@@ -208,78 +198,6 @@ RUN if [ ${INSTALL_PG_CLIENT} = true ]; then \
 ;fi
 
 ###########################################################################
-# xDebug:
-###########################################################################
-
-ARG INSTALL_XDEBUG=false
-ARG XDEBUG_PORT=9003
-
-RUN if [ ${INSTALL_XDEBUG} = true ]; then \
-  # Install the xdebug extension
-  # https://xdebug.org/docs/compat
-  if [ $(php -r "echo PHP_MAJOR_VERSION;") = "8" ] || { [ $(php -r "echo PHP_MAJOR_VERSION;") = "7" ] && { [ $(php -r "echo PHP_MINOR_VERSION;") = "4" ] || [ $(php -r "echo PHP_MINOR_VERSION;") = "3" ] ;} ;}; then \
-    pecl install xdebug-3.1.4; \
-  else \
-    if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
-      pecl install xdebug-2.5.5; \
-    else \
-      if [ $(php -r "echo PHP_MINOR_VERSION;") = "0" ]; then \
-        pecl install xdebug-2.9.0; \
-      else \
-        pecl install xdebug-2.9.8; \
-      fi \
-    fi \
-  fi && \
-  docker-php-ext-enable xdebug \
-;fi
-
-# Copy xdebug configuration for remote debugging
-COPY ./xdebug.ini /usr/local/etc/php/conf.d/xdebug.ini
-
-RUN if [ $(php -r "echo PHP_MAJOR_VERSION;") = "8" ] || { [ $(php -r "echo PHP_MAJOR_VERSION;") = "7" ] && { [ $(php -r "echo PHP_MINOR_VERSION;") = "4" ] || [ $(php -r "echo PHP_MINOR_VERSION;") = "3" ] ;} ;}; then \
-  sed -i "s/xdebug.remote_host=/xdebug.client_host=/" /usr/local/etc/php/conf.d/xdebug.ini && \
-  sed -i "s/xdebug.remote_connect_back=0/xdebug.discover_client_host=false/" /usr/local/etc/php/conf.d/xdebug.ini && \
-  sed -i "s/xdebug.remote_port=9000/xdebug.client_port=${XDEBUG_PORT}/" /usr/local/etc/php/conf.d/xdebug.ini && \
-  sed -i "s/xdebug.profiler_enable=0/; xdebug.profiler_enable=0/" /usr/local/etc/php/conf.d/xdebug.ini && \
-  sed -i "s/xdebug.profiler_output_dir=/xdebug.output_dir=/" /usr/local/etc/php/conf.d/xdebug.ini && \
-  sed -i "s/xdebug.remote_mode=req/; xdebug.remote_mode=req/" /usr/local/etc/php/conf.d/xdebug.ini && \
-  sed -i "s/xdebug.remote_autostart=0/xdebug.start_with_request=yes/" /usr/local/etc/php/conf.d/xdebug.ini && \
-  sed -i "s/xdebug.remote_enable=0/xdebug.mode=debug/" /usr/local/etc/php/conf.d/xdebug.ini \
-;else \
-  sed -i "s/xdebug.remote_autostart=0/xdebug.remote_autostart=1/" /usr/local/etc/php/conf.d/xdebug.ini && \
-  sed -i "s/xdebug.remote_enable=0/xdebug.remote_enable=1/" /usr/local/etc/php/conf.d/xdebug.ini \
-;fi
-RUN sed -i "s/xdebug.cli_color=0/xdebug.cli_color=1/" /usr/local/etc/php/conf.d/xdebug.ini
-
-###########################################################################
-# pcov:
-###########################################################################
-
-USER root
-
-ARG INSTALL_PCOV=false
-
-RUN if [ ${INSTALL_PCOV} = true ]; then \
-  if [ $(php -r "echo PHP_MAJOR_VERSION;") = "7" ]; then \
-    if [ $(php -r "echo PHP_MINOR_VERSION;") != "0" ]; then \
-      pecl install pcov && \
-      docker-php-ext-enable pcov \
-    ;fi \
-  ;fi \
-;fi
-
-###########################################################################
-# Phpdbg:
-###########################################################################
-
-ARG INSTALL_PHPDBG=false
-
-RUN if [ ${INSTALL_PHPDBG} = true ]; then \
-    # Load the xdebug extension only with phpunit commands
-    apt-get install -yqq --force-yes php${LARADOCK_PHP_VERSION}-phpdbg \
-;fi
-
-###########################################################################
 # Blackfire:
 ###########################################################################
 
@@ -351,45 +269,6 @@ RUN if [ ${INSTALL_MONGO} = true ]; then \
       php -m | grep -oiE '^mongodb$'; \
     fi; \
 fi
-
-###########################################################################
-# Xhprof:
-###########################################################################
-
-ARG INSTALL_XHPROF=false
-
-RUN set -eux; \
-    if [ ${INSTALL_XHPROF} = true ]; then \
-      # Install the php xhprof extension
-      if   [ $(php -r "echo PHP_MAJOR_VERSION;") != 5 ]; then \
-        pecl install xhprof; \
-      else \
-        curl -L -o /tmp/xhprof.tar.gz "https://codeload.github.com/phacility/xhprof/tar.gz/master"; \
-        mkdir -p /tmp/xhprof; \
-        tar -C /tmp/xhprof -zxvf /tmp/xhprof.tar.gz --strip 1; \
-        ( \
-            cd /tmp/xhprof/extension; \
-            phpize; \
-            ./configure; \
-            make; \
-            make install; \
-        ); \
-        rm -r /tmp/xhprof; \
-        rm /tmp/xhprof.tar.gz; \
-      fi; \
-      docker-php-ext-enable xhprof; \
-      php -m | grep -q 'xhprof'; \
-    fi
-
-# if [ ${INSTALL_XHPROF_USE_TIDYWAYS} = true ]; then \
-#   https://github.com/tideways/php-xhprof-extension
-# fi
-
-# COPY ./xhprof.ini /usr/local/etc/php/conf.d
-
-# RUN if [ ${INSTALL_XHPROF} = false ]; then \
-#     rm /usr/local/etc/php/conf.d/xhprof.ini \
-# ;fi
 
 ###########################################################################
 # AMQP:
