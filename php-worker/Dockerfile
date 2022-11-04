@@ -53,19 +53,6 @@ RUN if [ ${INSTALL_BZ2} = true ]; then \
   docker-php-ext-install bz2; \
   fi
 
-###########################################################################
-# PHP GnuPG:
-###########################################################################
-
-ARG INSTALL_GNUPG=false
-
-RUN set -eux; if [ ${INSTALL_GNUPG} = true ]; then \
-  apk add --no-cache --no-progress --virtual BUILD_DEPS_PHP_GNUPG gpgme-dev; \
-  apk add --no-cache --no-progress gpgme; \
-  pecl install gnupg; \
-  docker-php-ext-enable gnupg; \
-  fi
-
 #Install LDAP
 ARG INSTALL_LDAP=false;
 RUN set -eux; if [ ${INSTALL_LDAP} = true ]; then \
@@ -113,13 +100,6 @@ RUN set -eux; \
   php -m | grep -q 'imagick'; \
   fi
 
-#Install GMP package:
-ARG INSTALL_GMP=false
-RUN if [ ${INSTALL_GMP} = true ]; then \
-  apk add --update --no-cache gmp gmp-dev \
-  && docker-php-ext-install gmp \
-  ;fi
-
 #Install BCMath package:
 ARG INSTALL_BCMATH=false
 RUN if [ ${INSTALL_BCMATH} = true ]; then \
@@ -157,18 +137,6 @@ RUN set -eux; \
 ARG INSTALL_MYSQL_CLIENT=false
 RUN if [ ${INSTALL_MYSQL_CLIENT} = true ]; then \
   apk --update add mysql-client \
-  ;fi
-
-###########################################################################
-# Imap EXTENSION
-###########################################################################
-
-ARG INSTALL_IMAP=false
-
-RUN if [ ${INSTALL_IMAP} = true ]; then \
-  apk add --update imap-dev && \
-  docker-php-ext-configure imap --with-imap --with-imap-ssl && \
-  docker-php-ext-install imap \
   ;fi
 
 ###########################################################################

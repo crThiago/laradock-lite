@@ -74,45 +74,6 @@ RUN if [ ${INSTALL_BZ2} = true ]; then \
 ;fi
 
 ###########################################################################
-# Enchant:
-###########################################################################
-
-ARG INSTALL_ENCHANT=false
-RUN if [ ${INSTALL_ENCHANT} = true ]; then \
-  apt-get install -yqq libenchant-dev; \
-  docker-php-ext-install enchant; \
-  php -m | grep -oiE '^enchant$'; \
-fi
-
-###########################################################################
-# GMP (GNU Multiple Precision):
-###########################################################################
-
-ARG INSTALL_GMP=false
-
-RUN if [ ${INSTALL_GMP} = true ]; then \
-    # Install the GMP extension
-	  apt-get install -yqq libgmp-dev && \
-    if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
-      ln -s /usr/include/x86_64-linux-gnu/gmp.h /usr/include/gmp.h \
-    ;fi && \
-    docker-php-ext-install gmp \
-;fi
-
-###########################################################################
-# GnuPG:
-###########################################################################
-
-ARG INSTALL_GNUPG=false
-
-RUN if [ ${INSTALL_GNUPG} = true ]; then \
-      apt-get -yq install libgpgme-dev; \
-      pecl install gnupg; \
-      docker-php-ext-enable gnupg; \
-      php -m | grep -q 'gnupg'; \
-    fi
-
-###########################################################################
 # SSH2:
 ###########################################################################
 
@@ -127,18 +88,6 @@ RUN if [ ${INSTALL_SSH2} = true ]; then \
         pecl install -a ssh2-1.3.1; \
     fi && \
     docker-php-ext-enable ssh2 \
-;fi
-
-###########################################################################
-# libfaketime:
-###########################################################################
-
-USER root
-
-ARG INSTALL_FAKETIME=false
-
-RUN if [ ${INSTALL_FAKETIME} = true ]; then \
-    apt-get install -yqq libfaketime \
 ;fi
 
 ###########################################################################
@@ -178,16 +127,6 @@ RUN if [ ${INSTALL_PGSQL} = true ]; then \
 ;fi
 
 ###########################################################################
-# pcntl
-###########################################################################
-
-ARG INSTALL_PCNTL=false
-RUN if [ ${INSTALL_PCNTL} = true ]; then \
-    # Installs pcntl, helpful for running Horizon
-    docker-php-ext-install pcntl \
-;fi
-
-###########################################################################
 # bcmath:
 ###########################################################################
 
@@ -223,64 +162,6 @@ ARG INSTALL_EXIF=false
 RUN if [ ${INSTALL_EXIF} = true ]; then \
     # Enable Exif PHP extentions requirements
     docker-php-ext-install exif \
-;fi
-
-###########################################################################
-# PHP Aerospike:
-###########################################################################
-
-USER root
-
-ARG INSTALL_AEROSPIKE=false
-
-RUN set -xe; \
-    if [ ${INSTALL_AEROSPIKE} = true ]; then \
-    # Fix dependencies for PHPUnit within aerospike extension
-    apt-get -y install sudo wget && \
-    # Install the php aerospike extension
-    if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
-      curl -L -o /tmp/aerospike-client-php.tar.gz https://github.com/aerospike/aerospike-client-php5/archive/master.tar.gz; \
-    else \
-      curl -L -o /tmp/aerospike-client-php.tar.gz https://github.com/aerospike/aerospike-client-php/archive/master.tar.gz; \
-    fi \
-    && mkdir -p /tmp/aerospike-client-php \
-    && tar -C /tmp/aerospike-client-php -zxvf /tmp/aerospike-client-php.tar.gz --strip 1 \
-    && \
-    if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
-      ( \
-          cd /tmp/aerospike-client-php/src/aerospike \
-          && phpize \
-          && ./build.sh \
-          && make install \
-      ) \
-    else \
-      ( \
-          cd /tmp/aerospike-client-php/src \
-          && phpize \
-          && ./build.sh \
-          && make install \
-      ) \
-    fi \
-    && rm /tmp/aerospike-client-php.tar.gz \
-    && docker-php-ext-enable aerospike \
-;fi
-
-###########################################################################
-# IonCube Loader:
-###########################################################################
-
-ARG INSTALL_IONCUBE=false
-
-RUN if [ ${INSTALL_IONCUBE} = true ]; then \
-    if [ $(php -r "echo PHP_MAJOR_VERSION;") != "8" ]; then \
-      # Install the php ioncube loader
-      curl -L -o /tmp/ioncube_loaders_lin_x86-64.tar.gz https://downloads.ioncube.com/loader_downloads/ioncube_loaders_lin_x86-64.tar.gz \
-      && tar zxpf /tmp/ioncube_loaders_lin_x86-64.tar.gz -C /tmp \
-      && mv /tmp/ioncube/ioncube_loader_lin_${LARADOCK_PHP_VERSION}.so $(php -r "echo ini_get('extension_dir');")/ioncube_loader.so \
-      && printf "zend_extension=ioncube_loader.so\n" > $PHP_INI_DIR/conf.d/0ioncube.ini \
-      && rm -rf /tmp/ioncube* \
-      && php -m | grep -oiE '^ionCube Loader$' \
-    ;fi \
 ;fi
 
 ###########################################################################
@@ -333,18 +214,6 @@ RUN if [ ${INSTALL_LDAP} = true ]; then \
 ;fi
 
 ###########################################################################
-# Image optimizers:
-###########################################################################
-
-USER root
-
-ARG INSTALL_IMAGE_OPTIMIZERS=false
-
-RUN if [ ${INSTALL_IMAGE_OPTIMIZERS} = true ]; then \
-    apt-get install -yqq jpegoptim optipng pngquant gifsicle \
-;fi
-
-###########################################################################
 # ImageMagick:
 ###########################################################################
 
@@ -377,43 +246,6 @@ RUN if [ ${INSTALL_IMAGEMAGICK} = true ]; then \
 ;fi
 
 ###########################################################################
-# SMB:
-###########################################################################
-
-ARG INSTALL_SMB=false
-
-RUN if [ ${INSTALL_SMB} = true ]; then \
-    apt-get install -yqq smbclient libsmbclient-dev coreutils && \
-    pecl install smbclient && \
-    docker-php-ext-enable smbclient \
-;fi
-
-###########################################################################
-# IMAP:
-###########################################################################
-
-ARG INSTALL_IMAP=false
-
-RUN if [ ${INSTALL_IMAP} = true ]; then \
-    apt-get install -yqq libc-client-dev libkrb5-dev && \
-    docker-php-ext-configure imap --with-kerberos --with-imap-ssl && \
-    docker-php-ext-install imap \
-;fi
-
-###########################################################################
-# Calendar:
-###########################################################################
-
-USER root
-
-ARG INSTALL_CALENDAR=false
-
-RUN if [ ${INSTALL_CALENDAR} = true ]; then \
-    docker-php-ext-configure calendar && \
-    docker-php-ext-install calendar \
-;fi
-
-###########################################################################
 # Phalcon:
 ###########################################################################
 
@@ -430,80 +262,6 @@ RUN if [ $INSTALL_PHALCON = true ]; then \
   ;fi
 
 ###########################################################################
-# APCU:
-###########################################################################
-
-ARG INSTALL_APCU=false
-
-RUN if [ ${INSTALL_APCU} = true ]; then \
-    if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
-        pecl install -a apcu-4.0.11; \
-    else \
-        pecl install apcu; \
-    fi && \
-    docker-php-ext-enable apcu \
-;fi
-
-###########################################################################
-# YAML:
-###########################################################################
-
-USER root
-
-ARG INSTALL_YAML=false
-
-RUN if [ ${INSTALL_YAML} = true ]; then \
-    apt-get install -yqq libyaml-dev; \
-    if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
-        echo '' | pecl install -a yaml-1.3.2; \
-    elif [ $(php -r "echo PHP_MAJOR_VERSION;") = "7" ] && [ $(php -r "echo PHP_MINOR_VERSION;") = "0" ]; then \
-        echo '' | pecl install yaml-2.0.4; \
-    else \
-        echo '' | pecl install yaml; \
-    fi \
-    && docker-php-ext-enable yaml \
-;fi
-
-###########################################################################
-# RDKAFKA:
-###########################################################################
-
-ARG INSTALL_RDKAFKA=false
-
-RUN if [ ${INSTALL_RDKAFKA} = true ]; then \
-    apt-get install -yqq librdkafka-dev && \
-    pecl install rdkafka && \
-    docker-php-ext-enable rdkafka \
-;fi
-
-###########################################################################
-# GETTEXT:
-###########################################################################
-
-ARG INSTALL_GETTEXT=false
-
-RUN if [ ${INSTALL_GETTEXT} = true ]; then \
-    apt-get install -yqq zlib1g-dev libicu-dev g++ libpq-dev libssl-dev gettext && \
-    docker-php-ext-install gettext \
-;fi
-
-###########################################################################
-# Install additional locales:
-###########################################################################
-
-ARG INSTALL_ADDITIONAL_LOCALES=false
-ARG ADDITIONAL_LOCALES
-
-RUN if [ ${INSTALL_ADDITIONAL_LOCALES} = true ]; then \
-    apt-get install -yqq locales \
-    && echo '' >> /usr/share/locale/locale.alias \
-    && temp="${ADDITIONAL_LOCALES%\"}" \
-    && temp="${temp#\"}" \
-    && for i in ${temp}; do sed -i "/$i/s/^#//g" /etc/locale.gen; done \
-    && locale-gen \
-;fi
-
-###########################################################################
 # MySQL Client:
 ###########################################################################
 
@@ -516,18 +274,6 @@ RUN if [ ${INSTALL_MYSQL_CLIENT} = true ]; then \
 ;fi
 
 ###########################################################################
-# ping:
-###########################################################################
-
-USER root
-
-ARG INSTALL_PING=false
-
-RUN if [ ${INSTALL_PING} = true ]; then \
-    apt-get -y install inetutils-ping \
-;fi
-
-###########################################################################
 # sshpass:
 ###########################################################################
 
@@ -537,90 +283,6 @@ ARG INSTALL_SSHPASS=false
 
 RUN if [ ${INSTALL_SSHPASS} = true ]; then \
     apt-get -y install sshpass \
-;fi
-
-###########################################################################
-# Docker Client:
-###########################################################################
-
-USER root
-
-ARG INSTALL_DOCKER_CLIENT=false
-
-RUN if [ ${INSTALL_DOCKER_CLIENT} = true ]; then \
-    curl -sS https://download.docker.com/linux/static/stable/x86_64/docker-20.10.3.tgz -o /tmp/docker.tar.gz && \
-    tar -xzf /tmp/docker.tar.gz -C /tmp/ && \
-    cp /tmp/docker/docker* /usr/local/bin && \
-    chmod +x /usr/local/bin/docker* \
-;fi
-
-#####################################
-# wkhtmltopdf:
-#####################################
-
-USER root
-
-ARG INSTALL_WKHTMLTOPDF=false
-ARG WKHTMLTOPDF_VERSION=0.12.6-1
-
-RUN if [ ${INSTALL_WKHTMLTOPDF} = true ]; then \
-    ARCH=$(arch | sed s/aarch64/arm64/ | sed s/x86_64/amd64/) \
-    && apt-get install -yqq \
-      libxrender1 \
-      libfontconfig1 \
-      libx11-dev \
-      libjpeg62 \
-      libxtst6 \
-      fontconfig \
-      libjpeg62-turbo \
-      xfonts-base \
-      xfonts-75dpi \
-      wget \
-    && wget "https://github.com/wkhtmltopdf/packaging/releases/download/${WKHTMLTOPDF_VERSION}/wkhtmltox_0.12.6-1.stretch_${ARCH}.deb" \
-    && dpkg -i "wkhtmltox_${WKHTMLTOPDF_VERSION}.stretch_${ARCH}.deb" \
-    && apt -f install \
-;fi
-
-#####################################
-# trader:
-#####################################
-
-USER root
-
-ARG INSTALL_TRADER=false
-
-RUN if [ ${INSTALL_TRADER} = true ]; then \
-    pecl install trader \
-    && echo "extension=trader.so" >> $PHP_INI_DIR/conf.d/trader.ini \
-;fi
-
-###########################################################################
-# Mailparse extension:
-###########################################################################
-
-ARG INSTALL_MAILPARSE=false
-
-RUN if [ ${INSTALL_MAILPARSE} = true ]; then \
-    # Install mailparse extension
-    printf "\n" | pecl install -o -f mailparse \
-    &&  rm -rf /tmp/pear \
-    &&  docker-php-ext-enable mailparse \
-;fi
-
-###########################################################################
-# CacheTool:
-###########################################################################
-
-ARG INSTALL_CACHETOOL=false
-
-RUN if [ ${INSTALL_CACHETOOL} = true ]; then \
-    if [ $(php -r "echo PHP_MAJOR_VERSION;") = "7" ] && [ $(php -r "echo PHP_MINOR_VERSION;") -ge 1 ]; then \
-            curl -sO http://gordalina.github.io/cachetool/downloads/cachetool.phar; \
-    else \
-        curl http://gordalina.github.io/cachetool/downloads/cachetool-3.2.1.phar -o cachetool.phar; \
-    fi && \
-    chmod +x cachetool.phar && \
-    mv cachetool.phar /usr/local/bin/cachetool \
 ;fi
 
 ###########################################################################
@@ -659,27 +321,6 @@ RUN if [ ${INSTALL_PHPDECIMAL} = true ]; then \
 ;fi
 
 ###########################################################################
-# New Relic for PHP:
-###########################################################################
-ARG NEW_RELIC=${NEW_RELIC}
-ARG NEW_RELIC_KEY=${NEW_RELIC_KEY}
-ARG NEW_RELIC_APP_NAME=${NEW_RELIC_APP_NAME}
-
-RUN if [ ${NEW_RELIC} = true ]; then \
-  curl -L http://download.newrelic.com/php_agent/release/newrelic-php5-9.18.1.303-linux.tar.gz | tar -C /tmp -zx && \
-  export NR_INSTALL_USE_CP_NOT_LN=1 && \
-  export NR_INSTALL_SILENT=1 && \
-  /tmp/newrelic-php5-*/newrelic-install install && \
-  rm -rf /tmp/newrelic-php5-* /tmp/nrinstall* && \
-  sed -i \
-  -e 's/"REPLACE_WITH_REAL_KEY"/"'${NEW_RELIC_KEY}'"/' \
-  -e 's/newrelic.appname = "PHP Application"/newrelic.appname = "'${NEW_RELIC_APP_NAME}'"/' \
-  -e 's/;newrelic.daemon.app_connect_timeout =.*/newrelic.daemon.app_connect_timeout=15s/' \
-  -e 's/;newrelic.daemon.start_timeout =.*/newrelic.daemon.start_timeout=5s/' \
-  /usr/local/etc/php/conf.d/newrelic.ini \
-;fi
-
-###########################################################################
 # Downgrade Openssl:
 ###########################################################################
 
@@ -689,27 +330,6 @@ RUN if [ ${DOWNGRADE_OPENSSL_TLS_AND_SECLEVEL} = true ]; then \
     sed -i 's,^\(MinProtocol[ ]*=\).*,\1'TLSv1.2',g' /etc/ssl/openssl.cnf \
     && \
     sed -i 's,^\(CipherString[ ]*=\).*,\1'DEFAULT@SECLEVEL=1',g' /etc/ssl/openssl.cnf\
-;fi
-
-###########################################################################
-# zmq
-###########################################################################
-
-USER root
-
-ARG INSTALL_ZMQ=false
-
-RUN if [ ${INSTALL_ZMQ} = true ]; then \
-    apt-get install --yes git libzmq3-dev \
-    && git clone https://github.com/zeromq/php-zmq.git \
-    && cd php-zmq \
-    && phpize \
-    && ./configure \
-    && make \
-    && make install \
-    && cd .. \
-    && rm -fr php-zmq \
-    && echo "extension=zmq.so" > /usr/local/etc/php/conf.d/zmq.ini \
 ;fi
 
 ###########################################################################
@@ -742,12 +362,6 @@ ENV PGID ${PGID}
 
 RUN groupmod -o -g ${PGID} www-data && \
     usermod -o -u ${PUID} -g www-data www-data
-
-# Adding the faketime library to the preload file needs to be done last
-# otherwise it will preload it for all commands that follow in this file
-RUN if [ ${INSTALL_FAKETIME} = true ]; then \
-    echo "/usr/lib/x86_64-linux-gnu/faketime/libfaketime.so.1" > /etc/ld.so.preload \
-;fi
 
 # Configure locale.
 ARG LOCALE=POSIX

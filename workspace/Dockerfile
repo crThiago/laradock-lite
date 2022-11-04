@@ -185,7 +185,6 @@ RUN chmod -R 644 /etc/cron.d
 USER root
 
 ARG INSTALL_BZ2=false
-ARG INSTALL_GMP=false
 ARG INSTALL_GNUPG=false
 ARG INSTALL_SSH2=false
 ARG INSTALL_SOAP=false
@@ -198,19 +197,6 @@ RUN set -eux; \
     ###########################################################################
     if [ ${INSTALL_BZ2} = true ]; then \
       apt-get -yqq install php${LARADOCK_PHP_VERSION}-bz2; \
-    fi; \
-    ###########################################################################
-    # GMP (GNU Multiple Precision):
-    ###########################################################################
-    if [ ${INSTALL_GMP} = true ]; then \
-      # Install the PHP GMP extension
-      apt-get -yqq install php${LARADOCK_PHP_VERSION}-gmp; \
-    fi; \
-    ###########################################################################
-    # GnuPG:
-    ###########################################################################
-    if [ ${INSTALL_GNUPG} = true ]; then \
-        apt-get -yqq install php${LARADOCK_PHP_VERSION}-gnupg; \
     fi; \
     ###########################################################################
     # SSH2:
@@ -237,8 +223,6 @@ RUN set -eux; \
 ###########################################################################
 
 ARG INSTALL_LDAP=false
-ARG INSTALL_SMB=false
-ARG INSTALL_IMAP=false
 
 RUN set -eux; \
     ###########################################################################
@@ -246,18 +230,6 @@ RUN set -eux; \
     ###########################################################################
     if [ ${INSTALL_LDAP} = true ]; then \
         apt-get install -yqq libldap2-dev php${LARADOCK_PHP_VERSION}-ldap; \
-    fi; \
-    ###########################################################################
-    # SMB:
-    ###########################################################################
-    if [ ${INSTALL_SMB} = true ]; then \
-        apt-get install -yqq smbclient php${LARADOCK_PHP_VERSION}-smbclient coreutils; \
-    fi; \
-    ###########################################################################
-    # IMAP:
-    ###########################################################################
-    if [ ${INSTALL_IMAP} = true ]; then \
-        apt-get install -yqq php${LARADOCK_PHP_VERSION}-imap; \
     fi
 
 ###########################################################################
@@ -349,24 +321,6 @@ ARG INSTALL_GRAPHVIZ=false
 
 RUN if [ ${INSTALL_GRAPHVIZ} = true ]; then \
     apt-get install -yqq graphviz \
-;fi
-
-# IonCube Loader
-###########################################################################
-
-ARG INSTALL_IONCUBE=false
-
-RUN if [ ${INSTALL_IONCUBE} = true ]; then \
-    if [ $(php -r "echo PHP_MAJOR_VERSION;") != "8" ]; then \
-      # Install the php ioncube loader
-      curl -L -o /tmp/ioncube_loaders_lin_x86-64.tar.gz https://downloads.ioncube.com/loader_downloads/ioncube_loaders_lin_x86-64.tar.gz \
-      && tar zxpf /tmp/ioncube_loaders_lin_x86-64.tar.gz -C /tmp \
-      && mv /tmp/ioncube/ioncube_loader_lin_${LARADOCK_PHP_VERSION}.so $(php -r "echo ini_get('extension_dir');")/ioncube_loader.so \
-      && echo "zend_extension=ioncube_loader.so" >> /etc/php/${LARADOCK_PHP_VERSION}/mods-available/ioncube.ini \
-      && ln -s /etc/php/${LARADOCK_PHP_VERSION}/mods-available/ioncube.ini /etc/php/${LARADOCK_PHP_VERSION}/cli/conf.d/0ioncube.ini \
-      && rm -rf /tmp/ioncube* \
-      && php -m | grep -oiE '^ionCube Loader$' \
-    ;fi \
 ;fi
 
 ###########################################################################
@@ -537,52 +491,6 @@ RUN if [ ${INSTALL_YARN} = true ]; then \
 ENV PATH $PATH:/home/laradock/.yarn/bin
 
 ###########################################################################
-# PHP Aerospike:
-###########################################################################
-
-USER root
-
-ARG INSTALL_AEROSPIKE=false
-
-RUN set -xe; \
-  if [ ${INSTALL_AEROSPIKE} = true ]; then \
-    # Fix dependencies for PHPUnit within aerospike extension
-    apt-get -y install sudo wget && \
-    # Install the php aerospike extension
-    if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
-      curl -L -o /tmp/aerospike-client-php.tar.gz https://github.com/aerospike/aerospike-client-php5/archive/master.tar.gz; \
-    else \
-      curl -L -o /tmp/aerospike-client-php.tar.gz https://github.com/aerospike/aerospike-client-php/archive/master.tar.gz; \
-    fi \
-    && mkdir -p /tmp/aerospike-client-php \
-    && tar -C /tmp/aerospike-client-php -zxvf /tmp/aerospike-client-php.tar.gz --strip 1 \
-    && \
-      if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
-        ( \
-          cd /tmp/aerospike-client-php/src/aerospike \
-          && phpize \
-          && ./build.sh \
-          && make install \
-        ) \
-      else \
-        if [ $(php -r "echo PHP_MAJOR_VERSION;") = "7" ]; then \
-          ( \
-              cd /tmp/aerospike-client-php/src \
-              && phpize \
-              && ./build.sh \
-              && make install \
-          ) \
-        else \
-          echo "AEROSPIKE does not support PHP 8.0" \
-        ;fi \
-      ;fi \
-    && rm /tmp/aerospike-client-php.tar.gz \
-    && echo 'extension=aerospike.so' >> /etc/php/${LARADOCK_PHP_VERSION}/cli/conf.d/aerospike.ini \
-    && echo 'aerospike.udf.lua_system_path=/usr/local/aerospike/lua' >> /etc/php/${LARADOCK_PHP_VERSION}/cli/conf.d/aerospike.ini \
-    && echo 'aerospike.udf.lua_user_path=/usr/local/aerospike/usr-lua' >> /etc/php/${LARADOCK_PHP_VERSION}/cli/conf.d/aerospike.ini \
-  ;fi
-
-###########################################################################
 # PHP V8JS:
 ###########################################################################
 
@@ -694,21 +602,6 @@ RUN if [ ${INSTALL_LINUXBREW} = true ]; then \
     echo 'export MANPATH="$LINUXBREWHOME/man:$MANPATH"' >> ~/.bashrc && \
     echo 'export PKG_CONFIG_PATH="$LINUXBREWHOME/lib64/pkgconfig:$LINUXBREWHOME/lib/pkgconfig:$PKG_CONFIG_PATH"' >> ~/.bashrc && \
     echo 'export LD_LIBRARY_PATH="$LINUXBREWHOME/lib64:$LINUXBREWHOME/lib:$LD_LIBRARY_PATH"' >> ~/.bashrc \
-;fi
-
-###########################################################################
-# Image optimizers:
-###########################################################################
-
-USER root
-
-ARG INSTALL_IMAGE_OPTIMIZERS=false
-
-RUN if [ ${INSTALL_IMAGE_OPTIMIZERS} = true ]; then \
-    apt-get install -y jpegoptim optipng pngquant gifsicle && \
-    if [ ${INSTALL_NODE} = true ]; then \
-        exec bash && . ~/.bashrc && npm install -g svgo \
-    ;fi\
 ;fi
 
 USER laradock
@@ -887,9 +780,7 @@ RUN if [ ${INSTALL_DUSK_DEPS} = true ]; then \
 USER root
 
 ARG INSTALL_MYSQL_CLIENT=false
-ARG INSTALL_PING=false
 ARG INSTALL_SSHPASS=false
-ARG INSTALL_DOCKER_CLIENT=false
 
 RUN set -eux; \
   ###########################################################################
@@ -899,96 +790,11 @@ RUN set -eux; \
     apt-get -yqq install mysql-client; \
   fi; \
   ###########################################################################
-  # ping:
-  ###########################################################################
-  if [ ${INSTALL_PING} = true ]; then \
-    apt-get -yqq install inetutils-ping; \
-  fi; \
-  ###########################################################################
   # sshpass:
   ###########################################################################
   if [ ${INSTALL_SSHPASS} = true ]; then \
     apt-get -yqq install sshpass; \
-  fi; \
-  ###########################################################################
-  # Docker Client:
-  ###########################################################################
-  if [ ${INSTALL_DOCKER_CLIENT} = true ]; then \
-    curl -sS https://download.docker.com/linux/static/stable/x86_64/docker-20.10.3.tgz -o /tmp/docker.tar.gz; \
-    tar -xzf /tmp/docker.tar.gz -C /tmp/; \
-    cp /tmp/docker/docker* /usr/local/bin; \
-    chmod +x /usr/local/bin/docker*; \
   fi
-
-###########################################################################
-USER root
-
-ARG INSTALL_YAML=false
-ARG INSTALL_RDKAFKA=false
-
-RUN set -eux; \
-  ###########################################################################
-  # YAML: extension for PHP-CLI
-  ###########################################################################
-  if [ ${INSTALL_YAML} = true ]; then \
-    apt-get install -yqq libyaml-dev; \
-    if   [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
-        echo '' | pecl install -a yaml-1.3.2; \
-    elif [ $(php -r "echo PHP_MAJOR_VERSION;") = "7" ] && [ $(php -r "echo PHP_MINOR_VERSION;") = "0" ]; then \
-        echo '' | pecl install yaml-2.0.4; \
-    else \
-        echo '' | pecl install yaml; \
-    fi; \
-    echo "extension=yaml.so" >> /etc/php/${LARADOCK_PHP_VERSION}/mods-available/yaml.ini; \
-    ln -s /etc/php/${LARADOCK_PHP_VERSION}/mods-available/yaml.ini /etc/php/${LARADOCK_PHP_VERSION}/cli/conf.d/35-yaml.ini; \
-  fi; \
-  ###########################################################################
-  # RDKAFKA:
-  ###########################################################################
-  if [ ${INSTALL_RDKAFKA} = true ]; then \
-    apt-get install -yqq librdkafka-dev; \
-    pecl install rdkafka; \
-    echo "extension=rdkafka.so" >> /etc/php/${LARADOCK_PHP_VERSION}/mods-available/rdkafka.ini; \
-    ln -s /etc/php/${LARADOCK_PHP_VERSION}/mods-available/rdkafka.ini /etc/php/${LARADOCK_PHP_VERSION}/cli/conf.d/20-rdkafka.ini; \
-    php -m | grep -q 'rdkafka'; \
-  fi
-
-#####################################
-# wkhtmltopdf:
-#####################################
-
-USER root
-
-ARG INSTALL_WKHTMLTOPDF=false
-ARG WKHTMLTOPDF_VERSION=0.12.6-1
-
-RUN if [ ${INSTALL_WKHTMLTOPDF} = true ]; then \
-   ARCH=$(arch | sed s/aarch64/arm64/ | sed s/x86_64/amd64/) \
-   && apt-get install -y \
-   libxrender1 \
-   libfontconfig1 \
-   libx11-dev \
-   libjpeg62 \
-   libxtst6 \
-   fontconfig \
-   libjpeg-turbo8-dev \
-   xfonts-base \
-   xfonts-75dpi \
-   wget \
-   && wget "https://github.com/wkhtmltopdf/packaging/releases/download/${WKHTMLTOPDF_VERSION}/wkhtmltox_0.12.6-1.bionic_${ARCH}.deb" \
-   && dpkg -i "wkhtmltox_${WKHTMLTOPDF_VERSION}.bionic_${ARCH}.deb" \
-   && apt -f install \
-;fi
-
-###########################################################################
-# Mailparse extension:
-###########################################################################
-
-ARG INSTALL_MAILPARSE=false
-
-RUN if [ ${INSTALL_MAILPARSE} = true ]; then \
-    apt-get install -yqq php-mailparse \
-;fi
 
 ###########################################################################
 # GNU Parallel:
@@ -1089,44 +895,6 @@ RUN if [ ${INSTALL_PHPDECIMAL} = true ]; then \
       && ln -s /etc/php/${LARADOCK_PHP_VERSION}/mods-available/decimal.ini /etc/php/${LARADOCK_PHP_VERSION}/cli/conf.d/30-decimal.ini \
       && php -m | grep -q 'decimal' \
     ;fi \
-;fi
-
-#####################################
-# trader:
-#####################################
-
-USER root
-
-ARG INSTALL_TRADER=false
-
-RUN if [ ${INSTALL_TRADER} = true ]; then \
-    pecl install trader \
-    && echo "extension=trader.so" >> /etc/php/${LARADOCK_PHP_VERSION}/mods-available/trader.ini \
-    && ln -s /etc/php/${LARADOCK_PHP_VERSION}/mods-available/trader.ini /etc/php/${LARADOCK_PHP_VERSION}/cli/conf.d/20-trader.ini \
-;fi
-
-#
-#--------------------------------------------------------------------------
-# zmq
-#--------------------------------------------------------------------------
-#
-
-USER root
-
-ARG INSTALL_ZMQ=false
-
-RUN if [ ${INSTALL_ZMQ} = true ]; then \
-    apt-get install --yes git libzmq3-dev \
-    && git clone https://github.com/zeromq/php-zmq.git \
-    && cd php-zmq \
-    && phpize \
-    && ./configure \
-    && make \
-    && make install \
-    && cd .. \
-    && rm -fr php-zmq \
-    && echo "extension=zmq.so" >> /etc/php/${LARADOCK_PHP_VERSION}/mods-available/zmq.ini \
-    && ln -s /etc/php/${LARADOCK_PHP_VERSION}/mods-available/zmq.ini /etc/php/${LARADOCK_PHP_VERSION}/cli/conf.d/20-zmq.ini \
 ;fi
 
 #
