@@ -254,34 +254,6 @@ RUN if [ ${INSTALL_WORKSPACE_SSH} = true ]; then \
 ;fi
 
 ###########################################################################
-# Libpng16 EXTENSION
-###########################################################################
-
-ARG INSTALL_LIBPNG=false
-
-RUN if [ ${INSTALL_LIBPNG} = true ]; then \
-    apt-get -yqq install libpng16-16 \
-;fi
-
-###########################################################################
-# Inotify EXTENSION:
-###########################################################################
-
-ARG INSTALL_INOTIFY=false
-
-RUN if [ ${INSTALL_INOTIFY} = true ]; then \
-    if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
-      pecl -q install inotify-0.1.6 && \
-      echo "extension=inotify.so" >> /etc/php/${LARADOCK_PHP_VERSION}/mods-available/inotify.ini && \
-      ln -s /etc/php/${LARADOCK_PHP_VERSION}/mods-available/inotify.ini /etc/php/${LARADOCK_PHP_VERSION}/cli/conf.d/20-inotify.ini; \
-    else \
-      pecl -q install inotify && \
-      echo "extension=inotify.so" >> /etc/php/${LARADOCK_PHP_VERSION}/mods-available/inotify.ini && \
-      ln -s /etc/php/${LARADOCK_PHP_VERSION}/mods-available/inotify.ini /etc/php/${LARADOCK_PHP_VERSION}/cli/conf.d/20-inotify.ini \
-    ;fi \
-;fi
-
-###########################################################################
 # AST EXTENSION
 ###########################################################################
 
@@ -297,45 +269,6 @@ RUN if [ ${INSTALL_AST} = true ]; then \
         echo "extension=ast.so" >> /etc/php/${LARADOCK_PHP_VERSION}/mods-available/ast.ini && \
         phpenmod -v ${LARADOCK_PHP_VERSION} -s cli ast \
     ;fi \
-;fi
-
-###########################################################################
-# fswatch
-###########################################################################
-
-ARG INSTALL_FSWATCH=false
-
-RUN if [ ${INSTALL_FSWATCH} = true ]; then \
-    apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 47FE03C1 \
-    && add-apt-repository -y ppa:hadret/fswatch \
-    || apt-get update -yqq \
-    && apt-get -y install fswatch \
-;fi
-
-###########################################################################
-
-# GraphViz extension
-###########################################################################
-
-ARG INSTALL_GRAPHVIZ=false
-
-RUN if [ ${INSTALL_GRAPHVIZ} = true ]; then \
-    apt-get install -yqq graphviz \
-;fi
-
-###########################################################################
-# Drupal Console:
-###########################################################################
-
-USER root
-
-ARG INSTALL_DRUPAL_CONSOLE=false
-
-RUN if [ ${INSTALL_DRUPAL_CONSOLE} = true ]; then \
-    apt-get -y install mysql-client && \
-    curl https://drupalconsole.com/installer -L -o drupal.phar && \
-    mv drupal.phar /usr/local/bin/drupal && \
-    chmod +x /usr/local/bin/drupal \
 ;fi
 
 USER laradock
@@ -513,19 +446,6 @@ RUN set -xe; \
   ;fi
 
 ###########################################################################
-# Laravel Envoy:
-###########################################################################
-
-USER laradock
-
-ARG INSTALL_LARAVEL_ENVOY=false
-
-RUN if [ ${INSTALL_LARAVEL_ENVOY} = true ]; then \
-    # Install the Laravel Envoy
-    composer global require laravel/envoy \
-;fi
-
-###########################################################################
 # Laravel Installer:
 ###########################################################################
 
@@ -545,126 +465,6 @@ ENV COMPOSER_REPO_PACKAGIST ${COMPOSER_REPO_PACKAGIST}
 
 RUN if [ ${COMPOSER_REPO_PACKAGIST} ]; then \
     composer config -g repo.packagist composer ${COMPOSER_REPO_PACKAGIST} \
-;fi
-
-###########################################################################
-# Deployer:
-###########################################################################
-
-USER root
-
-ARG INSTALL_DEPLOYER=false
-
-RUN if [ ${INSTALL_DEPLOYER} = true ]; then \
-    # Install the Deployer
-    # Using Phar as currently there is no support for laravel 4 from composer version
-    # Waiting to be resolved on https://github.com/deployphp/deployer/issues/1552
-    curl -LO https://deployer.org/deployer.phar && \
-    mv deployer.phar /usr/local/bin/dep && \
-    chmod +x /usr/local/bin/dep \
-;fi
-
-###########################################################################
-# Prestissimo:
-###########################################################################
-ARG INSTALL_PRESTISSIMO=false
-
-RUN if [ ${INSTALL_PRESTISSIMO} = true ]; then \
-    if [ $(php -r "echo COMPOSER_VERSION;") = "1" ]; then \
-      # Install Prestissimo
-      composer global require "hirak/prestissimo" \
-    ;fi \
-;fi
-
-###########################################################################
-# Linuxbrew:
-###########################################################################
-
-USER root
-
-ARG INSTALL_LINUXBREW=false
-
-RUN if [ ${INSTALL_LINUXBREW} = true ]; then \
-    # Preparation
-    apt-get upgrade -y && \
-    apt-get install -y build-essential make cmake scons curl git \
-      ruby autoconf automake autoconf-archive \
-      gettext libtool flex bison \
-      libbz2-dev libcurl4-openssl-dev \
-      libexpat-dev libncurses-dev && \
-    # Install the Linuxbrew
-    git clone --depth=1 https://github.com/Homebrew/linuxbrew.git ~/.linuxbrew && \
-    echo "" >> ~/.bashrc && \
-    echo 'export PKG_CONFIG_PATH"=/usr/local/lib/pkgconfig:/usr/local/lib64/pkgconfig:/usr/lib64/pkgconfig:/usr/lib/pkgconfig:/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/lib64/pkgconfig:/usr/share/pkgconfig:$PKG_CONFIG_PATH"' >> ~/.bashrc && \
-    # Setup linuxbrew
-    echo 'export LINUXBREWHOME="$HOME/.linuxbrew"' >> ~/.bashrc && \
-    echo 'export PATH="$LINUXBREWHOME/bin:$PATH"' >> ~/.bashrc && \
-    echo 'export MANPATH="$LINUXBREWHOME/man:$MANPATH"' >> ~/.bashrc && \
-    echo 'export PKG_CONFIG_PATH="$LINUXBREWHOME/lib64/pkgconfig:$LINUXBREWHOME/lib/pkgconfig:$PKG_CONFIG_PATH"' >> ~/.bashrc && \
-    echo 'export LD_LIBRARY_PATH="$LINUXBREWHOME/lib64:$LINUXBREWHOME/lib:$LD_LIBRARY_PATH"' >> ~/.bashrc \
-;fi
-
-USER laradock
-
-###########################################################################
-# Symfony:
-###########################################################################
-
-USER root
-
-ARG INSTALL_SYMFONY=false
-
-RUN if [ ${INSTALL_SYMFONY} = true ]; then \
-  mkdir -p /usr/local/bin \
-  && apt-get -y install sudo wget \
-  && wget --quiet https://get.symfony.com/cli/installer -O - | bash \
-  && mv /root/.symfony/bin/symfony /usr/local/bin/symfony \
-  && chmod a+x /usr/local/bin/symfony \
-;fi
-
-###########################################################################
-# PYTHON2:
-###########################################################################
-
-ARG INSTALL_PYTHON=false
-
-RUN if [ ${INSTALL_PYTHON} = true ]; then \
-  apt-get -y install python python-dev build-essential  \
-  && curl https://bootstrap.pypa.io/pip/2.7/get-pip.py -o get-pip.py  \
-  && python get-pip.py  \
-  && rm get-pip.py  \
-  && python -m pip install --upgrade pip  \
-  && python -m pip install --upgrade virtualenv \
-;fi
-
-###########################################################################
-# PYTHON3:
-###########################################################################
-
-ARG INSTALL_PYTHON3=false
-
-RUN if [ ${INSTALL_PYTHON3} = true ]; then \
-  apt-get -y install python3 python3-dev build-essential  \
-  && curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py  \
-  && python3 get-pip.py  \
-  && rm get-pip.py  \
-  && python3 -m pip install --upgrade --force-reinstall pip  \
-  && python3 -m pip install --upgrade virtualenv \
-;fi
-
-###########################################################################
-# POWERLINE:
-###########################################################################
-
-USER root
-ARG INSTALL_POWERLINE=false
-
-RUN if [ ${INSTALL_POWERLINE} = true ]; then \
-    if [ ${INSTALL_PYTHON} = true ]; then \
-    python -m pip install --upgrade powerline-status && \
-    echo "" >> /etc/bash.bashrc && \
-    echo ". /usr/local/lib/python2.7/dist-packages/powerline/bindings/bash/powerline.sh" >> /etc/bash.bashrc \
-  ;fi \
 ;fi
 
 ###########################################################################
@@ -718,22 +518,6 @@ RUN if [ ${INSTALL_IMAGEMAGICK} = true ]; then \
 ;fi
 
 ###########################################################################
-# Terraform:
-###########################################################################
-
-USER root
-
-ARG INSTALL_TERRAFORM=false
-
-RUN if [ ${INSTALL_TERRAFORM} = true ]; then \
-    apt-get -yqq install sudo wget unzip \
-    && wget https://releases.hashicorp.com/terraform/0.10.6/terraform_0.10.6_linux_amd64.zip \
-    && unzip terraform_0.10.6_linux_amd64.zip \
-    && mv terraform /usr/local/bin \
-    && rm terraform_0.10.6_linux_amd64.zip \
-;fi
-
-###########################################################################
 # pgsql client
 ###########################################################################
 
@@ -748,32 +532,6 @@ RUN if [ ${INSTALL_PG_CLIENT} = true ]; then \
     && echo "deb http://apt.postgresql.org/pub/repos/apt/ `lsb_release -cs`-pgdg main" | tee /etc/apt/sources.list.d/pgdg.list \
     && apt-get update \
     && apt-get -y install postgresql-client-12 \
-;fi
-
-###########################################################################
-# Dusk Dependencies:
-###########################################################################
-
-USER root
-
-ARG CHROME_DRIVER_VERSION=stable
-ENV CHROME_DRIVER_VERSION ${CHROME_DRIVER_VERSION}
-ARG INSTALL_DUSK_DEPS=false
-
-RUN if [ ${INSTALL_DUSK_DEPS} = true ]; then \
-  apt-get -y install zip wget unzip xdg-utils \
-    libxpm4 libxrender1 libgtk2.0-0 libnss3 libgconf-2-4 xvfb \
-    gtk2-engines-pixbuf xfonts-cyrillic xfonts-100dpi xfonts-75dpi \
-    xfonts-base xfonts-scalable x11-apps \
-  && wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb \
-  && dpkg -i --force-depends google-chrome-stable_current_amd64.deb \
-  && apt-get -y -f install \
-  && dpkg -i --force-depends google-chrome-stable_current_amd64.deb \
-  && rm google-chrome-stable_current_amd64.deb \
-  && wget https://chromedriver.storage.googleapis.com/${CHROME_DRIVER_VERSION}/chromedriver_linux64.zip \
-  && unzip chromedriver_linux64.zip \
-  && mv chromedriver /usr/local/bin/ \
-  && rm chromedriver_linux64.zip \
 ;fi
 
 ###########################################################################
@@ -797,32 +555,6 @@ RUN set -eux; \
   fi
 
 ###########################################################################
-# GNU Parallel:
-###########################################################################
-
-USER root
-
-ARG INSTALL_GNU_PARALLEL=false
-
-RUN if [ ${INSTALL_GNU_PARALLEL} = true ]; then \
-  apt-get -yqq install parallel \
-;fi
-
-###########################################################################
-# Bash Git Prompt
-###########################################################################
-
-ARG INSTALL_GIT_PROMPT=false
-
-COPY git-prompt.sh /tmp/git-prompt
-
-RUN if [ ${INSTALL_GIT_PROMPT} = true ]; then \
-    git clone https://github.com/magicmonty/bash-git-prompt.git /root/.bash-git-prompt --depth=1 && \
-    cat /tmp/git-prompt >> /root/.bashrc && \
-    rm /tmp/git-prompt \
-;fi
-
-###########################################################################
 # XMLRPC:
 ###########################################################################
 
@@ -830,39 +562,6 @@ ARG INSTALL_XMLRPC=false
 
 RUN if [ ${INSTALL_XMLRPC} = true ]; then \
     apt-get install -yqq php${LARADOCK_PHP_VERSION}-xmlrpc \
-;fi
-
-###########################################################################
-# Lnav:
-###########################################################################
-
-ARG INSTALL_LNAV=false
-
-RUN if [ ${INSTALL_LNAV} = true ]; then \
-    apt-get install -yqq lnav \
-;fi
-
-###########################################################################
-# Protoc:
-###########################################################################
-
-ARG INSTALL_PROTOC=false
-ARG PROTOC_VERSION
-
-RUN if [ ${INSTALL_PROTOC} = true ]; then \
-  if [ ${PROTOC_VERSION} = "latest" ]; then \
-    REAL_PROTOC_VERSION=$(curl -s https://api.github.com/repos/protocolbuffers/protobuf/releases/latest | \
-      sed -nr 's/.*"tag_name":\s?"v(.+?)".*/\1/p'); \
-  else \
-    REAL_PROTOC_VERSION=${PROTOC_VERSION}; \
-  fi && \
-  PROTOC_ZIP=protoc-${REAL_PROTOC_VERSION}-linux-x86_64.zip; \
-  curl -L -o /tmp/protoc.zip https://github.com/protocolbuffers/protobuf/releases/download/v${REAL_PROTOC_VERSION}/${PROTOC_ZIP} && \
-  unzip -q -o /tmp/protoc.zip -d /usr/local bin/protoc && \
-  unzip -q -o /tmp/protoc.zip -d /usr/local 'include/*' && \
-  rm -f /tmp/protoc.zip && \
-  chmod +x /usr/local/bin/protoc && \
-  chmod -R +r /usr/local/include/google \
 ;fi
 
 ###########################################################################
